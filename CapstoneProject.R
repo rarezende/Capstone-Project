@@ -46,9 +46,46 @@ GetLastWord <- function(x) {
 }
 
 
+# ----------------------------------------------------------------
+# Construction of N-gram map
+# ----------------------------------------------------------------
+
+CreateNGramMap <- function(inputText, ngramSize, minFreq = 10) {
+    
+    # Filter for sentences that have at more than ngramSize words
+    indValid <- sapply(strsplit(inputText, split=" "), function(x) length(x)) > ngramSize
+    textSample <- inputText[indValid]
+
+    freqTable <- get.phrasetable(ngram(textSample, ngramSize + 1))
+    freqTable <- subset(freqTable, freq > minFreq)
+    
+    looseWords <- strsplit(x = freqTable$ngrams, split=" ")
+    
+    if(ngramSize == 1) {
+        freqTable$Key <- sapply(looseWords, GetFirstWord)
+    } else if(ngramSize == 2) {
+        freqTable$Key <- sapply(looseWords, GetFirstTwoWords)
+    } else if(ngramSize == 3) {
+        freqTable$Key <- sapply(looseWords, GetFirstThreeWords)
+    } else {
+        return()
+    }
+    
+    freqTable$Value <- sapply(looseWords, GetLastWord)
+    
+    freqTable <- freqTable[order(freqTable$Key, -freqTable$freq), c("Key", "Value", "freq")]
+    
+    gfreqTable <<- freqTable
+    
+    # Keeps only the (Key, Value) pair with the highest frequency
+    indUnique <- !duplicated(freqTable$Key)    
+    
+    hashmap(freqTable$Key[indUnique], freqTable$Value[indUnique])
+}
+
 pt = proc.time()
 
-nLines = 20000
+nLines = 50000
 
 con = file("./en_US/en_US.twitter.txt", "r") 
 sampleTwitter = readLines(con, nLines)
@@ -68,23 +105,12 @@ sampleBlogs   = SentencePreprocessing(sampleBlogs)
 
 textSample = c(sampleTwitter, sampleNews, sampleBlogs)
 
-# Filter for sentences that have at least ngram_size words or, equivalently,
-# (ngram_size - 1) whitespaces, since we have clean, trimmed sentences
-ngram_size = 3
-textSample = textSample[sapply(gregexpr("\\s", textSample), length) >= (ngram_size - 1)]
+gfreqTable = c()
 
-freqTable = get.phrasetable(ngram(textSample, ngram_size))
-freqTable = subset(freqTable, freq > 20)
+uniGramMap = CreateNGramMap(textSample, ngramSize = 1, minFreq = 10)
+biGramMap = CreateNGramMap(textSample, ngramSize = 2, minFreq = 10)
+triGramMap = CreateNGramMap(textSample, ngramSize = 3, minFreq = 10)
 
-triGrams = strsplit(x = freqTable$ngrams, split=" ")
-freqTable$BiGrams  = sapply(triGrams, GetFirstTwoWords)
-freqTable$UniGrams = sapply(triGrams, GetLastWord)
-
-freqTable = freqTable[order(freqTable$BiGrams, -freqTable$freq), c("BiGrams", "UniGrams", "freq")]
-
-indUnique = !duplicated(freqTable$BiGrams)    
-
-bigramMap = hashmap(freqTable$BiGrams[indUnique], freqTable$UniGrams[indUnique])
 
 runningTime = proc.time() - pt
 
