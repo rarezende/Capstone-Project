@@ -29,6 +29,23 @@ SentencePreprocessing <- function(textSample) {
     return(textSample)
 }    
 
+GetFirstWord <- function(x) {
+    x[1]
+}
+
+GetFirstTwoWords <- function(x) {
+    paste(x[1:2], collapse = " ")
+}
+
+GetFirstThreeWords <- function(x) {
+    paste(x[1:3], collapse = " ")
+}
+
+GetLastWord <- function(x) {
+    x[length(x)]
+}
+
+
 pt = proc.time()
 
 nLines = 20000
@@ -51,15 +68,23 @@ sampleBlogs   = SentencePreprocessing(sampleBlogs)
 
 textSample = c(sampleTwitter, sampleNews, sampleBlogs)
 
-ngram_size = 3
-
 # Filter for sentences that have at least ngram_size words or, equivalently,
 # (ngram_size - 1) whitespaces, since we have clean, trimmed sentences
+ngram_size = 3
 textSample = textSample[sapply(gregexpr("\\s", textSample), length) >= (ngram_size - 1)]
 
 freqTable = get.phrasetable(ngram(textSample, ngram_size))
+freqTable = subset(freqTable, freq > 20)
 
-cleanFreqTable = subset(freqTable, freq > 100)
+triGrams = strsplit(x = freqTable$ngrams, split=" ")
+freqTable$BiGrams  = sapply(triGrams, GetFirstTwoWords)
+freqTable$UniGrams = sapply(triGrams, GetLastWord)
+
+freqTable = freqTable[order(freqTable$BiGrams, -freqTable$freq), c("BiGrams", "UniGrams", "freq")]
+
+indUnique = !duplicated(freqTable$BiGrams)    
+
+bigramMap = hashmap(freqTable$BiGrams[indUnique], freqTable$UniGrams[indUnique])
 
 runningTime = proc.time() - pt
 
