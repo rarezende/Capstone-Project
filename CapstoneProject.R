@@ -1,13 +1,14 @@
-# -------------------------------------------------------------------- #
+# ==================================================================== #
 # Capstone Project 
-# -------------------------------------------------------------------- #
+# ==================================================================== #
 
 library(ngram)
 library(tm)
 library(hashmap)
 
+
 # ----------------------------------------------------------------
-# Cleaning and preprocessing of raw text
+# Cleaning sentences and filtering of profanity
 # ----------------------------------------------------------------
 
 SentencePreprocessing <- function(inputText) {
@@ -21,14 +22,17 @@ SentencePreprocessing <- function(inputText) {
     # Remove all non-alpha text (numbers etc), but keeps apostrophes
     textSample <- gsub(pattern = "[^[:alpha:]']", x = textSample, replacement = " ")
     
+    # Force all characters to lower case
+    textSample <- tolower(textSample)
+    
+    # Remove profanity and other words we do not want to predict
+    textSample <- removeWords(textSample, profanityFilter)
+
     # Remove leading and trailing whitespaces
     textSample <- gsub("(^[[:space:]]+|[[:space:]]+$)", "", textSample)
     
     # Remove contiguous whitespaces
     textSample <- gsub(pattern = "\\s+", x = textSample, replacement = " ")
-    
-    # Force all characters to lower case
-    textSample <- tolower(textSample)
     
     return(textSample)
 }    
@@ -63,7 +67,16 @@ CreateNGramMap <- function(inputText, ngramSize, minFreq = 10) {
     
     freqTable <- freqTable[order(freqTable$Key, -freqTable$freq), c("Key", "Value", "freq")]
     
-    gfreqTable <<- freqTable
+    # ======================== REMOVE ========================
+    # Global variables stored for later inspection
+    if(ngramSize == 1) {
+        gfreqTableUniGram <<- freqTable
+    } else if(ngramSize == 2) {
+        gfreqTableBiGram <<- freqTable
+    } else if(ngramSize == 3) {
+        gfreqTableTriGram <<- freqTable
+    } 
+    # ======================== REMOVE ========================
     
     # Keeps only the (Key, Value) pair with the highest frequency
     idxUnique <- !duplicated(freqTable$Key)    
@@ -73,18 +86,22 @@ CreateNGramMap <- function(inputText, ngramSize, minFreq = 10) {
 
 pt = proc.time()
 
-nLines = 10000
+nLines = 200000
 
 con = file("./en_US/en_US.twitter.txt", "r") 
-sampleTwitter = readLines(con, nLines)
+sampleTwitter = readLines(con, nLines, encoding = "UTF-8")
 close(con) 
 
 con = file("./en_US/en_US.news.txt", "r") 
-sampleNews = readLines(con, nLines)
+sampleNews = readLines(con, nLines, encoding = "UTF-8")
 close(con) 
 
 con = file("./en_US/en_US.blogs.txt", "r") 
-sampleBlogs = readLines(con, nLines)
+sampleBlogs = readLines(con, nLines, encoding = "UTF-8")
+close(con) 
+
+con = file("./ProfanityFilter.txt", "r") 
+profanityFilter = readLines(con, -1, encoding = "UTF-8")
 close(con) 
 
 sampleTwitter = SentencePreprocessing(sampleTwitter)
@@ -93,13 +110,20 @@ sampleBlogs   = SentencePreprocessing(sampleBlogs)
 
 textSample = c(sampleTwitter, sampleNews, sampleBlogs)
 
-gfreqTable = c()
+gfreqTableUniGram = c()
+gfreqTableBiGram = c()
+gfreqTableTriGram = c()
 
-uniGramMap = CreateNGramMap(textSample, ngramSize = 1, minFreq = 10)
-#biGramMap = CreateNGramMap(textSample, ngramSize = 2, minFreq = 10)
-#triGramMap = CreateNGramMap(textSample, ngramSize = 3, minFreq = 10)
+uniGramMap = CreateNGramMap(textSample, ngramSize = 1, minFreq = 30)
+biGramMap = CreateNGramMap(textSample, ngramSize = 2, minFreq = 20)
+triGramMap = CreateNGramMap(textSample, ngramSize = 3, minFreq = 10)
 
 
 runningTime = proc.time() - pt
 
 print(runningTime)
+
+
+
+
+
