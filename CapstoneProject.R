@@ -8,7 +8,7 @@ library(hashmap)
 
 
 # ----------------------------------------------------------------
-# Cleaning sentences and filtering of profanity
+# Cleaning of the text and filtering of profanity
 # ----------------------------------------------------------------
 
 SentencePreprocessing <- function(inputText) {
@@ -84,46 +84,36 @@ CreateNGramMap <- function(inputText, ngramSize, minFreq = 10) {
     hashmap(freqTable$Key[idxUnique], freqTable$Value[idxUnique])
 }
 
-pt = proc.time()
+PredictNextWord <- function(inputText) {
+    
+    # Force all characters to lower case
+    textSample <- tolower(inputText)
+    
+    # Remove leading and trailing whitespaces
+    textSample <- gsub("(^[[:space:]]+|[[:space:]]+$)", "", textSample)
+    
+    # Remove contiguous whitespaces
+    textSample <- gsub(pattern = "\\s+", x = textSample, replacement = " ")
 
-nLines = 200000
+    looseWords <- unlist(strsplit(textSample, split=" "))
+    nWords <- length(looseWords)
+    
+    if(nWords >= 3) {
+        key <- paste(looseWords[(nWords-2):nWords], collapse = " ")
+        value <- triGramMap[[key]]
+    } else if(nWords == 2) {
+        key <- paste(looseWords[1:2], collapse = " ")
+        value <- biGramMap[[key]]
+    } else if(nWords == 1) {
+        key <- looseWords[1]
+        value <- uniGramMap[[key]]
+    } else {
+        value = "Sorry!"
+    }
 
-con = file("./en_US/en_US.twitter.txt", "r") 
-sampleTwitter = readLines(con, nLines, encoding = "UTF-8")
-close(con) 
+    return(value)
+}
 
-con = file("./en_US/en_US.news.txt", "r") 
-sampleNews = readLines(con, nLines, encoding = "UTF-8")
-close(con) 
-
-con = file("./en_US/en_US.blogs.txt", "r") 
-sampleBlogs = readLines(con, nLines, encoding = "UTF-8")
-close(con) 
-
-con = file("./ProfanityFilter.txt", "r") 
-profanityFilter = readLines(con, -1, encoding = "UTF-8")
-close(con) 
-
-sampleTwitter = SentencePreprocessing(sampleTwitter)
-sampleNews    = SentencePreprocessing(sampleNews)
-sampleBlogs   = SentencePreprocessing(sampleBlogs)
-
-textSample = c(sampleTwitter, sampleNews, sampleBlogs)
-
-gfreqTableUniGram = c()
-gfreqTableBiGram = c()
-gfreqTableTriGram = c()
-
-uniGramMap = CreateNGramMap(textSample, ngramSize = 1, minFreq = 30)
-biGramMap = CreateNGramMap(textSample, ngramSize = 2, minFreq = 20)
-triGramMap = CreateNGramMap(textSample, ngramSize = 3, minFreq = 10)
-
-
-runningTime = proc.time() - pt
-
-print(runningTime)
-
-
-
+PredictNextWord("do you want to be a")
 
 
