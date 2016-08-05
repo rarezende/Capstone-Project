@@ -11,7 +11,7 @@ library(hashmap)
 # Cleaning of the text and filtering of profanity
 # ----------------------------------------------------------------
 
-SentencePreprocessing <- function(inputText) {
+SentencePreprocessing <- function(inputText, badWordsList) {
     
     # Swap all sentence ends with code 'xwx'
     textSample <- gsub(pattern = ";|\\.|!|\\?", x = inputText, replacement = "xwx")
@@ -26,7 +26,7 @@ SentencePreprocessing <- function(inputText) {
     textSample <- tolower(textSample)
     
     # Remove profanity and other words we do not want to predict
-    textSample <- removeWords(textSample, profanityFilter)
+    textSample <- removeWords(textSample, badWordsList)
 
     # Remove leading and trailing whitespaces
     textSample <- gsub("(^[[:space:]]+|[[:space:]]+$)", "", textSample)
@@ -39,10 +39,10 @@ SentencePreprocessing <- function(inputText) {
 
 
 # ----------------------------------------------------------------
-# Construction of N-gram map
+# Construction of N-gram map table
 # ----------------------------------------------------------------
 
-CreateNGramMap <- function(inputText, ngramSize, minFreq = 10) {
+CreateNGramMapTable <- function(inputText, ngramSize, minFreq = 1) {
     
     # Filter for sentences that have more than ngramSize words
     idxValid <- sapply(strsplit(inputText, split=" "), function(x) length(x)) > ngramSize
@@ -55,33 +55,35 @@ CreateNGramMap <- function(inputText, ngramSize, minFreq = 10) {
     
     if(ngramSize == 1) {
         freqTable$Key <- sapply(looseWords, function(x) x[1])
-    } else if(ngramSize == 2) {
+    } 
+    else if(ngramSize == 2) {
         freqTable$Key <- sapply(looseWords, function(x) paste(x[1:2], collapse = " "))
-    } else if(ngramSize == 3) {
+    } 
+    else if(ngramSize == 3) {
         freqTable$Key <- sapply(looseWords, function(x) paste(x[1:3], collapse = " "))
-    } else {
-        return()
-    }
+    } 
     
     freqTable$Value <- sapply(looseWords, function(x) x[length(x)])
     
-    freqTable <- freqTable[order(freqTable$Key, -freqTable$freq), c("Key", "Value", "freq")]
+    nGramMapTable <- freqTable[order(freqTable$Key, -freqTable$freq), c("Key", "Value", "freq")]
     
     # ======================== REMOVE ========================
     # Global variables stored for later inspection
     if(ngramSize == 1) {
-        gfreqTableUniGram <<- freqTable
-    } else if(ngramSize == 2) {
-        gfreqTableBiGram <<- freqTable
-    } else if(ngramSize == 3) {
-        gfreqTableTriGram <<- freqTable
+        gUniGramMapTable <<- nGramMapTable
+    } 
+    else if(ngramSize == 2) {
+        gBiGramMapTable <<- nGramMapTable
+    } 
+    else if(ngramSize == 3) {
+        gTriGramMapTable <<- nGramMapTable
     } 
     # ======================== REMOVE ========================
     
     # Keeps only the (Key, Value) pair with the highest frequency
-    idxUnique <- !duplicated(freqTable$Key)    
+    idxUnique <- !duplicated(nGramMapTable$Key)   
     
-    hashmap(freqTable$Key[idxUnique], freqTable$Value[idxUnique])
+    return(nGramMapTable[idxUnique,])
 }
 
 PredictNextWord <- function(inputText) {
@@ -100,20 +102,56 @@ PredictNextWord <- function(inputText) {
     
     if(nWords >= 3) {
         key <- paste(looseWords[(nWords-2):nWords], collapse = " ")
-        value <- triGramMap[[key]]
-    } else if(nWords == 2) {
+        if(triGramMap$has_key(key)){
+            value <- triGramMap[[key]]
+        } 
+        else {
+            key <- paste(looseWords[(nWords-1):nWords], collapse = " ")
+            if(biGramMap$has_key(key)) {
+                value <- biGramMap[[key]]
+            } 
+            else {
+                key <- looseWords[nWords]
+                if(uniGramMap$has_key(key)) {
+                    value <- uniGramMap[[key]]
+                } 
+                else {
+                    value <- "Perdeu praiboy"
+                }
+            }
+        }
+    } 
+    else if(nWords == 2) {
         key <- paste(looseWords[1:2], collapse = " ")
-        value <- biGramMap[[key]]
-    } else if(nWords == 1) {
-        key <- looseWords[1]
-        value <- uniGramMap[[key]]
-    } else {
-        value = "Sorry!"
+        if(biGramMap$has_key(key)) {
+            value <- biGramMap[[key]]
+        } 
+        else {
+            key <- looseWords[nWords]
+            if(uniGramMap$has_key(key)) {
+                value <- uniGramMap[[key]]
+            } 
+            else {
+                value <- "Perdeu praiboy"
+            }
+        }
+    } 
+    else if(nWords == 1) {
+        key <- looseWords[nWords]
+        if(uniGramMap$has_key(key)) {
+            value <- uniGramMap[[key]]
+        } 
+        else {
+            value <- "Perdeu praiboy"
+        }
+    } 
+    else {
+        value <- "Perdeu praiboy"
     }
 
     return(value)
 }
 
-PredictNextWord("do you want to be a")
+
 
 

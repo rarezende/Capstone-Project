@@ -2,11 +2,11 @@
 # Capstone Project 
 # ==================================================================== #
 
-source("./CapstoneProject.R")
+source("Functions.R")
 
 pt = proc.time()
 
-nLines = 200000
+nLines = 50000
 
 con = file("./en_US/en_US.twitter.txt", "r") 
 sampleTwitter = readLines(con, nLines, encoding = "UTF-8")
@@ -20,25 +20,34 @@ con = file("./en_US/en_US.blogs.txt", "r")
 sampleBlogs = readLines(con, nLines, encoding = "UTF-8")
 close(con) 
 
-con = file("./ProfanityFilter.txt", "r") 
-profanityFilter = readLines(con, -1, encoding = "UTF-8")
+con = file("./BadWordsList.txt", "r") 
+badWordsList = readLines(con, -1, encoding = "UTF-8")
 close(con) 
-
-sampleTwitter = SentencePreprocessing(sampleTwitter)
-sampleNews    = SentencePreprocessing(sampleNews)
-sampleBlogs   = SentencePreprocessing(sampleBlogs)
 
 textSample = c(sampleTwitter, sampleNews, sampleBlogs)
 
-gfreqTableUniGram = c()
-gfreqTableBiGram = c()
-gfreqTableTriGram = c()
+textSample = SentencePreprocessing(textSample, badWordsList)
 
-uniGramMap = CreateNGramMap(textSample, ngramSize = 1, minFreq = 30)
-biGramMap = CreateNGramMap(textSample, ngramSize = 2, minFreq = 20)
-triGramMap = CreateNGramMap(textSample, ngramSize = 3, minFreq = 10)
+gUniGramMapTable = c()
+gBiGramMapTable = c()
+gTriGramMapTable = c()
 
+nGramMapTable = CreateNGramMapTable(textSample, ngramSize = 1, minFreq = 5)
+write.csv(nGramMapTable, "UniGramMapTable.csv")
+uniGramMap = hashmap(nGramMapTable$Key, nGramMapTable$Value)
+
+nGramMapTable = CreateNGramMapTable(textSample, ngramSize = 2, minFreq = 4)
+write.csv(nGramMapTable, "BiGramMapTable.csv")
+biGramMap = hashmap(nGramMapTable$Key, nGramMapTable$Value)
+
+nGramMapTable = CreateNGramMapTable(textSample, ngramSize = 3, minFreq = 3)
+write.csv(nGramMapTable, "TriGramMapTable.csv")
+triGramMap = hashmap(nGramMapTable$Key, nGramMapTable$Value)
 
 runningTime = proc.time() - pt
 
 print(runningTime)
+
+
+PredictNextWord("home evening")
+
