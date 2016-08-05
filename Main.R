@@ -49,5 +49,4 @@ runningTime = proc.time() - pt
 print(runningTime)
 
 
-PredictNextWord("home evening")
 
