@@ -6,7 +6,7 @@ source("Functions.R")
 
 pt = proc.time()
 
-nLines = 50000
+nLines = 200000
 
 con = file("./en_US/en_US.twitter.txt", "r") 
 sampleTwitter = readLines(con, nLines, encoding = "UTF-8")
