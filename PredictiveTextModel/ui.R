@@ -18,4 +18,3 @@ shinyUI(pageWithSidebar(
         verbatimTextOutput("prediction")
     )
 ))
-

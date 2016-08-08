@@ -6,7 +6,7 @@ source("Functions.R")
 
 pt = proc.time()
 
-nLines = 200000
+nLines = 10000
 
 con = file("./en_US/en_US.twitter.txt", "r") 
 sampleTwitter = readLines(con, nLines, encoding = "UTF-8")
@@ -47,6 +47,7 @@ triGramMap = hashmap(nGramMapTable$Key, nGramMapTable$Value)
 runningTime = proc.time() - pt
 
 print(runningTime)
+
 
 
 

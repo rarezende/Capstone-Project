@@ -1,5 +1,6 @@
 # ==================================================================== #
-# Capstone Project 
+# Predictive Text Model Application
+# Data Science Specialization - Capstone Project 
 # ==================================================================== #
 
 library(ngram)
@@ -8,7 +9,7 @@ library(hashmap)
 
 
 # ----------------------------------------------------------------
-# Cleaning of the text and filtering of profanity
+# Data cleaning and filtering of profanity
 # ----------------------------------------------------------------
 
 SentencePreprocessing <- function(inputText, badWordsList) {
@@ -84,6 +85,76 @@ CreateNGramMapTable <- function(inputText, ngramSize, minFreq = 1) {
     idxUnique <- !duplicated(nGramMapTable$Key)   
     
     return(nGramMapTable[idxUnique,])
+}
+
+PredictNextWord <- function(inputText, nGramMapList) {
+    
+    uniGramMap <- nGramMapList$uniGramMap
+    biGramMap <- nGramMapList$biGramMap
+    triGramMap <- nGramMapList$triGramMap
+    
+    # Force all characters to lower case
+    textSample <- tolower(inputText)
+    
+    # Remove leading and trailing whitespaces
+    textSample <- gsub("(^[[:space:]]+|[[:space:]]+$)", "", textSample)
+    
+    # Remove contiguous whitespaces
+    textSample <- gsub(pattern = "\\s+", x = textSample, replacement = " ")
+    
+    looseWords <- unlist(strsplit(textSample, split=" "))
+    nWords <- length(looseWords)
+    
+    if(nWords >= 3) {
+        key <- paste(looseWords[(nWords-2):nWords], collapse = " ")
+        if(triGramMap$has_key(key)){
+            value <- triGramMap[[key]]
+        } 
+        else {
+            key <- paste(looseWords[(nWords-1):nWords], collapse = " ")
+            if(biGramMap$has_key(key)) {
+                value <- biGramMap[[key]]
+            } 
+            else {
+                key <- looseWords[nWords]
+                if(uniGramMap$has_key(key)) {
+                    value <- uniGramMap[[key]]
+                } 
+                else {
+                    value <- "the"
+                }
+            }
+        }
+    } 
+    else if(nWords == 2) {
+        key <- paste(looseWords[1:2], collapse = " ")
+        if(biGramMap$has_key(key)) {
+            value <- biGramMap[[key]]
+        } 
+        else {
+            key <- looseWords[nWords]
+            if(uniGramMap$has_key(key)) {
+                value <- uniGramMap[[key]]
+            } 
+            else {
+                value <- "the"
+            }
+        }
+    } 
+    else if(nWords == 1) {
+        key <- looseWords[nWords]
+        if(uniGramMap$has_key(key)) {
+            value <- uniGramMap[[key]]
+        } 
+        else {
+            value <- "the"
+        }
+    } 
+    else {
+        value <- "the"
+    }
+    
+    return(value)
 }
 
 
