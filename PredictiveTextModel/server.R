@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------
 
 library(shiny)
-source("../Functions.R")
+source("PredictiveTextModel.R")
 
 nGramMapList <- list()
     

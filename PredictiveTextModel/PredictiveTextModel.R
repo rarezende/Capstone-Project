@@ -9,7 +9,7 @@ library(hashmap)
 
 
 # ----------------------------------------------------------------
-# Data cleaning and filtering of profanity
+# Prepare clean sentences and remove inappropriate words
 # ----------------------------------------------------------------
 
 SentencePreprocessing <- function(inputText, badWordsList) {

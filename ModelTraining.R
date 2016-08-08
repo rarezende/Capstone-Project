@@ -1,8 +1,11 @@
 # ==================================================================== #
-# Capstone Project 
+# Predictive Text Model Application
+# Data Science Specialization - Capstone Project 
 # ==================================================================== #
 
-source("Functions.R")
+setwd("C:/Users/Rodrigo/Data-Science/Capstone-Project")
+source("./PredictiveTextModel/PredictiveTextModel.R")
+
 
 pt = proc.time()
 
