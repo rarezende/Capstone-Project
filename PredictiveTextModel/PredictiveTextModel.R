@@ -40,20 +40,21 @@ SentencePreprocessing <- function(inputText, badWordsList) {
 
 
 # ----------------------------------------------------------------
-# Construction of N-gram map table
+# Construction of N-gram frequency table
 # ----------------------------------------------------------------
 
-CreateNGramMapTable <- function(inputText, ngramSize, minFreq = 1) {
+CreateNGramFreqTable <- function(inputText, ngramSize, minFreq = 2) {
     
     # Filter for sentences that have more than ngramSize words
     idxValid <- sapply(strsplit(inputText, split=" "), function(x) length(x)) > ngramSize
     textSample <- inputText[idxValid]
 
     freqTable <- get.phrasetable(ngram(textSample, ngramSize + 1))
-    freqTable <- subset(freqTable, freq > minFreq)
+    freqTable <- subset(freqTable, freq >= minFreq)
     
     looseWords <- strsplit(freqTable$ngrams, split=" ")
     
+    # Create the Key for the hashmap
     if(ngramSize == 1) {
         freqTable$Key <- sapply(looseWords, function(x) x[1])
     } 
@@ -64,28 +65,18 @@ CreateNGramMapTable <- function(inputText, ngramSize, minFreq = 1) {
         freqTable$Key <- sapply(looseWords, function(x) paste(x[1:3], collapse = " "))
     } 
     
+    # Create the Value for the hashmap
     freqTable$Value <- sapply(looseWords, function(x) x[length(x)])
     
-    nGramMapTable <- freqTable[order(freqTable$Key, -freqTable$freq), c("Key", "Value", "freq")]
+    nGramFreqTable <- freqTable[, c("Key", "Value", "freq")]
     
-    # ======================== REMOVE ========================
-    # Global variables stored for later inspection
-    if(ngramSize == 1) {
-        gUniGramMapTable <<- nGramMapTable
-    } 
-    else if(ngramSize == 2) {
-        gBiGramMapTable <<- nGramMapTable
-    } 
-    else if(ngramSize == 3) {
-        gTriGramMapTable <<- nGramMapTable
-    } 
-    # ======================== REMOVE ========================
-    
-    # Keeps only the (Key, Value) pair with the highest frequency
-    idxUnique <- !duplicated(nGramMapTable$Key)   
-    
-    return(nGramMapTable[idxUnique,])
+    return(nGramFreqTable)
 }
+
+
+# ----------------------------------------------------------------
+# Prediction of next word using unigram, bigram and trigram maps
+# ----------------------------------------------------------------
 
 PredictNextWord <- function(inputText, nGramMapList) {
     
@@ -97,10 +88,10 @@ PredictNextWord <- function(inputText, nGramMapList) {
     textSample <- tolower(inputText)
     
     # Remove leading and trailing whitespaces
-    textSample <- gsub("(^[[:space:]]+|[[:space:]]+$)", "", textSample)
+    textSample <- gsub("(^[[:space:]]+|[[:space:]]+$)", replacement = "", textSample)
     
     # Remove contiguous whitespaces
-    textSample <- gsub(pattern = "\\s+", x = textSample, replacement = " ")
+    textSample <- gsub("\\s+", replacement = " ", textSample)
     
     looseWords <- unlist(strsplit(textSample, split=" "))
     nWords <- length(looseWords)
