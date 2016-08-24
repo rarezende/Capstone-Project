@@ -1,0 +1,70 @@
+---
+title: "Milestone Report"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The purpose of this report is just to display that we have downloaded the data that is going to be used in the Capstone Project and that we have been able to succesfully load and work with the data set. For that purpose, we are going to provide some basic summary statistics about the data sets and perform an initial exploratory analysis with the objective of developing an n-gram model that will be used in our text prediction application.
+
+## Basic Summary of the Data Files
+
+```{r, echo=FALSE}
+fileSummary = data.frame(File.Name = c("en_US.twitter.txt", "en_US.news.txt", "en_US.blogs.txt"),
+                         File.Size = c("159 MB", "196 MB", "200 MB"),
+                         Number.Of.Lines = c("2,360,148", "1,010,242", "899,288"),
+                         Min.Line.Length = c("2", "1", "1"),
+                         Max.Line.Length = c("140", "11,384", "40,832"))
+
+knitr::kable(fileSummary, align = c("l", "r", "r", "c", "c"))
+
+```
+
+## Exploratory Analysis
+
+Since the final objective of the project will be to create an n-gram language model, we started our exploratory analysis by creating frequency tables for the types of n-grams that we are planning to use. The following plot shows the 10 most frequent Bigrams in the whole data set.
+
+```{r, echo=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+
+nGramMapTable = read.csv("UniGramMapTable.csv", row.names = 1, stringsAsFactors = FALSE)
+nGramMapTable$Bigram = paste(nGramMapTable$Key, nGramMapTable$Value)
+
+topBigrams = top_n(nGramMapTable, 10, freq) %>%
+             arrange(desc(freq))
+
+topBigrams$freq = topBigrams$freq/1000
+
+graph = ggplot(data = topBigrams, aes(x = Bigram, y = freq))
+graph = graph + geom_bar(stat = "identity", fill = "Red", alpha = 0.6)
+graph = graph + labs(x = "Bigram", y = "Number of Occurrences in Data Set (thousands)")
+graph = graph + labs(title = "Top 10 Most Frequent Bigrams")
+graph = graph + scale_x_discrete(limits=topBigrams$Bigram)
+graph = graph + theme(axis.text.x = element_text(angle=45, hjust = 1))
+graph
+```
+
+The following plot shows the 10 most frequent Trigrams in the whole data set.
+
+```{r, echo=FALSE, message=FALSE}
+nGramMapTable = read.csv("BiGramMapTable.csv", row.names = 1, stringsAsFactors = FALSE)
+nGramMapTable$Trigram = paste(nGramMapTable$Key, nGramMapTable$Value)
+
+topTrigrams = top_n(nGramMapTable, 10, freq) %>%
+              arrange(desc(freq))
+
+topTrigrams$freq = topTrigrams$freq/1000
+
+graph = ggplot(data = topTrigrams, aes(x = Trigram, y = freq))
+graph = graph + geom_bar(stat = "identity", fill = "Red", alpha = 0.6)
+graph = graph + labs(x = "Trigram", y = "Number of Occurrences in Data Set (thousands)")
+graph = graph + labs(title = "Top 10 Most Frequent Trigrams")
+graph = graph + scale_x_discrete(limits=topTrigrams$Trigram)
+graph = graph + theme(axis.text.x = element_text(angle=45, hjust = 1))
+graph
+```
