@@ -10,7 +10,7 @@ source("./PredictiveTextModel/PredictiveTextModel.R")
 
 startTime = proc.time()
 
-N_FILE_LINES = 500000
+N_FILE_LINES = -1L
 BATCH_SIZE = 100000
 
 con = file("./BadWordsList.txt", "r") 
