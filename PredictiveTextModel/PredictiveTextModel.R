@@ -87,6 +87,9 @@ PredictNextWord <- function(inputText, nGramMapList) {
     # Force all characters to lower case
     textSample <- tolower(inputText)
     
+    # Remove all non-alpha text (numbers etc), but keeps apostrophes
+    textSample <- gsub("[^[:alpha:]']", x = textSample, replacement = " ")
+    
     # Remove leading and trailing whitespaces
     textSample <- gsub("(^[[:space:]]+|[[:space:]]+$)", replacement = "", textSample)
     
